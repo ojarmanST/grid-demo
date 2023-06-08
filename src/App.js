@@ -4,7 +4,7 @@ import { AgGridReact } from 'ag-grid-react'; // the AG Grid React Component
 
 import 'ag-grid-community/styles/ag-grid.css'; // Core grid CSS, always needed
 import 'ag-grid-community/styles/ag-theme-alpine.css'; // Optional theme CSS
-
+import 'ag-grid-enterprise'
 const App = () => {
   //  recommend the use of memo around Components, to avoid wasted component renders on your Component.
  const gridRef = useRef(); // Optional - for accessing Grid's API
@@ -27,6 +27,7 @@ const App = () => {
         valueGetter: p => p.data.athlete, 
         initialWidth: 200, 
         headerName: capHeaders ? 'ATHLETE' : 'Athlete',
+        rowDrag: true
       },
       {
         field: 'age', 
@@ -49,7 +50,7 @@ const App = () => {
  // useMemo used here to prevent re-rendering unnecessarily
  const defaultColDef = useMemo(()=> ({
      sortable: true,
-     resizable: true
+     resizable: true,
    }));
 
 
@@ -112,7 +113,7 @@ const App = () => {
   gridRef.current.columnApi.applyColumnState(
     {
       state: [
-        {colId: 'gold'}, 
+        {colId: 'gold', editable: true}, 
         {colId: 'silver'}, 
         {colId: 'bronze'}, 
         {colId: 'total'}, 
@@ -155,6 +156,22 @@ const App = () => {
    gridRef.current.api.deselectAll();
  }, []);
 
+ const onGrouping = useCallback( () => {
+  console.log(gridRef.current.columnApi)
+    gridRef.current.columnApi.applyColumnState(
+      {
+        state: [
+          {colId: 'athlete', rowGroupIndex: 1, hide: true}, 
+          {colId: 'country', rowGroupIndex: 0, hide: true}, 
+          {colId: 'gold', aggFunc: 'sum'}, 
+          {colId: 'silver', aggFunc: 'sum'}, 
+          {colId: 'bronze', aggFunc: 'sum'}, 
+          {colId: 'total', aggFunc: 'sum'}, 
+        ],
+        applyOrder: true
+      }
+    )
+ }, [])
 
 
  return (
@@ -178,6 +195,7 @@ const App = () => {
      <button onClick={onSortGoldSilverBronze}>Sort Medalists by Color</button><br></br>
      <button onClick={onColsMedalsLast}>Medals LAST</button><br></br>
      <button onClick={onColsMedalsFirst}>Medals FIRST</button><br></br>
+     <button onClick={onGrouping}>Group Country Athlete</button><br></br>
 
 
 
@@ -195,7 +213,8 @@ const App = () => {
             onGridReady={() => console.log('hello')}
             editable={true}
             sidebar={true}
-            pagination={true}
+            // pagination={true}
+            rowDragManaged={true} // only works if pagination is NOT true
             maintainColumnOrder={true} // if you dont want column order to be changed when setting column definitions, 
             />
       </div>
