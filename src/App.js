@@ -8,6 +8,7 @@ import 'ag-grid-community/styles/ag-theme-alpine.css'; // Optional theme CSS
 const App = () => {
   //  recommend the use of memo around Components, to avoid wasted component renders on your Component.
  const gridRef = useRef(); // Optional - for accessing Grid's API
+ const savedColState = useRef()
  const [rowData, setRowData] = useState(); // Set rowData to Array of Objects, one Object per Row
  const [includeMedals, setIncludeMedals] = useState(true)
  const [capHeaders, setCapHeaders] = useState(false)
@@ -24,7 +25,7 @@ const App = () => {
         // when using valueGetter instead of field, the column will be set a new id on each render
         //if using a value getter, make sure you provide colId, otherwise the grid wont know how to match the columns
         valueGetter: p => p.data.athlete, 
-        initialWidth: 100, 
+        initialWidth: 200, 
         headerName: capHeaders ? 'ATHLETE' : 'Athlete',
       },
       {
@@ -51,6 +52,45 @@ const App = () => {
      resizable: true
    }));
 
+
+  const onSaveColState = useCallback(() => {
+    const colState = gridRef.current.columnApi.getColumnState()
+    console.log('Saving Column State', colState)
+    savedColState.current = colState;
+    //when you 'save state' you can see all state properties on column in console
+    }, [])
+
+  const onRestoreColState = useCallback(() => {
+    console.log('Restoring Column State', savedColState.current)
+    gridRef.current.columnApi.applyColumnState({state: savedColState.current})
+  }, [])
+
+  const onWidth100 = useCallback(() => {
+    gridRef.current.columnApi.applyColumnState({
+      state: [
+        { colId: 'athlete', width: 100 },
+      ],
+      defaultState: {
+        width: 150
+      }
+    })
+  }, [])
+
+  const onSortGoldSilverBronze = useCallback(() => {
+    gridRef.current.columnApi.applyColumnState({
+      state: [
+        { colId: 'gold', sort: 'desc', sortIndex: 0 },
+        { colId: 'silver', sort: 'desc', sortIndex: 1 },
+        { colId: 'bronze', sort: 'desc', sortIndex:  2},
+      ],
+      defaultState: {
+        sort: null
+      }
+    })
+  }, [])
+
+
+
  // Example of consuming Grid Event
  const cellClickedListener = useCallback( event => {
    console.log('cellClicked', event);
@@ -67,6 +107,41 @@ const App = () => {
  const toggleHeaders = useCallback(() => {
   setCapHeaders(prev => !prev)
  }, [])
+
+ const onColsMedalsFirst = useCallback(() => {
+  gridRef.current.columnApi.applyColumnState(
+    {
+      state: [
+        {colId: 'gold'}, 
+        {colId: 'silver'}, 
+        {colId: 'bronze'}, 
+        {colId: 'total'}, 
+        {colId: 'athlete'}, 
+        {colId: 'age'}, 
+        {colId: 'country'}, 
+      ],
+      applyOrder: true
+    })
+ }, [])
+
+ const onColsMedalsLast = useCallback(() => {
+  gridRef.current.columnApi.applyColumnState(
+    {
+      state: [
+        {colId: 'athlete'}, 
+        {colId: 'age'}, 
+        {colId: 'country'}, 
+        {colId: 'gold'}, 
+        {colId: 'silver'}, 
+        {colId: 'bronze'}, 
+        {colId: 'total'}, 
+      ],
+      applyOrder: true
+    })
+ }, [])
+
+
+
 
  // Example load data from server
  useEffect(() => {
@@ -86,13 +161,26 @@ const App = () => {
    <div style={{margin: '50px'}}>
      <button onClick={buttonListener}>Deselect all</button><br></br>
      <button onClick={toggleMedals}>Toggle Medals</button>
-     <button onClick={toggleHeaders}>ToggleHeaders</button>
+     <button onClick={toggleHeaders}>ToggleHeaders</button><br></br>
+
      Set Age Pinned: 
      <button onClick={() =>setAgePinned('left')}>Left</button>
      <button onClick={() =>setAgePinned('right')}>Right</button>
      {/* setting state value to null means to 'clear' it while undefined means, don't touch it */}
      <button onClick={() =>setAgePinned(null)}>Null</button>
-     <button onClick={() =>setAgePinned(undefined)}>Undefined</button>
+     <button onClick={() =>setAgePinned(undefined)}>Undefined</button><br></br>
+
+     Column State:
+     <button onClick={onSaveColState}>Save State</button>
+     <button onClick={onRestoreColState}>Restore State</button><br></br>
+     <button onClick={onWidth100}>Width100</button><br></br>
+
+     <button onClick={onSortGoldSilverBronze}>Sort Medalists by Color</button><br></br>
+     <button onClick={onColsMedalsLast}>Medals LAST</button><br></br>
+     <button onClick={onColsMedalsFirst}>Medals FIRST</button><br></br>
+
+
+
      {/* On div wrapping Grid a) specify theme CSS Class and b) sets Grid size */}
       <div className="ag-theme-alpine" style={{width: '100%', height: 500}}>
         <AgGridReact 
