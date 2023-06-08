@@ -9,23 +9,30 @@ const App = () => {
   //  recommend the use of memo around Components, to avoid wasted component renders on your Component.
  const gridRef = useRef(); // Optional - for accessing Grid's API
  const [rowData, setRowData] = useState(); // Set rowData to Array of Objects, one Object per Row
-
  const [includeMedals, setIncludeMedals] = useState(true)
  const [capHeaders, setCapHeaders] = useState(false)
+ const [agePinned, setAgePinned] = useState(undefined)
+
 
  // Each Column Definition results in one Column.
  // when making column definition changes, code easier to understand using useMemo
  const columnDefs = useMemo(() => {
     return [
       {
-        // field: 'athlete',
-        colId: 'bananas',
+        field: 'athlete',
+        // colId: 'bananas',
         // when using valueGetter instead of field, the column will be set a new id on each render
+        //if using a value getter, make sure you provide colId, otherwise the grid wont know how to match the columns
         valueGetter: p => p.data.athlete, 
         initialWidth: 100, 
-        headerName: capHeaders ? 'ATHLETE' : 'Athlete'
+        headerName: capHeaders ? 'ATHLETE' : 'Athlete',
       },
-      {field: 'age', initialWidth: 100, headerName: capHeaders ? 'AGE' : 'Age'},
+      {
+        field: 'age', 
+        initialWidth: 100, 
+        pinned: agePinned, 
+        headerName: capHeaders ? 'AGE' : 'Age',
+      },
       {field: 'country'},
       {field: 'year'},
       {field: 'date'},
@@ -35,7 +42,7 @@ const App = () => {
       {field: 'bronze', hide: !includeMedals},
       {field: 'total', hide: !includeMedals},
     ] 
-}, [includeMedals, capHeaders]);
+}, [includeMedals, capHeaders, agePinned]);
 
  // DefaultColDef sets props common to all Columns
  // useMemo used here to prevent re-rendering unnecessarily
@@ -48,6 +55,10 @@ const App = () => {
  const cellClickedListener = useCallback( event => {
    console.log('cellClicked', event);
  }, []);
+
+//  const onAgePinned = useCallback( event => {
+//    setAgePinned(event.target.value)
+//  }, []);
 
  const toggleMedals = useCallback(() => {
   setIncludeMedals(prev => !prev)
@@ -76,6 +87,12 @@ const App = () => {
      <button onClick={buttonListener}>Deselect all</button><br></br>
      <button onClick={toggleMedals}>Toggle Medals</button>
      <button onClick={toggleHeaders}>ToggleHeaders</button>
+     Set Age Pinned: 
+     <button onClick={() =>setAgePinned('left')}>Left</button>
+     <button onClick={() =>setAgePinned('right')}>Right</button>
+     {/* setting state value to null means to 'clear' it while undefined means, don't touch it */}
+     <button onClick={() =>setAgePinned(null)}>Null</button>
+     <button onClick={() =>setAgePinned(undefined)}>Undefined</button>
      {/* On div wrapping Grid a) specify theme CSS Class and b) sets Grid size */}
       <div className="ag-theme-alpine" style={{width: '100%', height: 500}}>
         <AgGridReact 
@@ -91,6 +108,7 @@ const App = () => {
             editable={true}
             sidebar={true}
             pagination={true}
+            maintainColumnOrder={true} // if you dont want column order to be changed when setting column definitions, 
             />
       </div>
    </div>
